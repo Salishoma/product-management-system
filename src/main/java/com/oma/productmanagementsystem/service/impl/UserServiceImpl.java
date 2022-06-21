@@ -26,10 +26,8 @@ public class UserServiceImpl implements UserService {
         String userId = UUID.randomUUID().toString();
         user.setUserId(userId);
         userRepository.save(user);
-        UserResponseModel userResponseModel = mapper.map(userRequestModel, UserResponseModel.class);
 
-        userResponseModel.setUserId(userId);
-        return userResponseModel;
+        return mapper.map(user, UserResponseModel.class);
     }
 
     @Override

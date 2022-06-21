@@ -18,7 +18,7 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @RequestMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserResponseModel>> getUsers() {
         List<UserResponseModel> users = userService.getUsers();
         System.out.println("=========>Users: " + users);
@@ -31,10 +31,11 @@ public class UserController {
 
         UserResponseModel user = userService.getUser(userId);
         System.out.println("Response entity: " + ResponseEntity.ok(user));
-        return ResponseEntity.ok(user);
+        return user == null ?
+                new ResponseEntity<>(HttpStatus.NOT_FOUND) : ResponseEntity.ok(user);
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST,
+    @RequestMapping(value = "", method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserResponseModel> createUser(@RequestBody UserRequestModel userRequestModel) {
         UserResponseModel user = userService.createUser(userRequestModel);
@@ -44,7 +45,8 @@ public class UserController {
     @RequestMapping(value = "/{userId}", method = RequestMethod.PUT)
     public ResponseEntity<UserResponseModel> updateUser(@PathVariable final String userId, UserRequestModel userRequestModel) {
         UserResponseModel user = userService.updateUser(userId, userRequestModel);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        return user == null ?
+                new ResponseEntity<>(HttpStatus.NOT_FOUND) : ResponseEntity.ok(user);
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
