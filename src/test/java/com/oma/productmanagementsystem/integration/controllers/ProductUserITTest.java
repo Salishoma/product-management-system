@@ -72,7 +72,7 @@ public class ProductUserITTest {
         list.add(productUser);
         list.add(user2);
 
-                mockMvc = MockMvcBuilders
+        mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
                 .apply(springSecurity())
                 .build();
@@ -83,7 +83,7 @@ public class ProductUserITTest {
     public void findUser() throws Exception {
         when(userService.getUser(any(String.class)))
                 .thenReturn(getUserResponseModel());
-        mockMvc.perform(get("/api/users/3").with((user("user"))))
+        mockMvc.perform(get("/api/users/3").with(user("user")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId", is("3")))
@@ -120,7 +120,7 @@ public class ProductUserITTest {
 
     private List<UserResponseModel> findUsers() {
         return list.stream().map(productUser1 ->
-            new ModelMapper().map(productUser1, UserResponseModel.class)
-        ).collect(Collectors.toList());
+                new ModelMapper().map(productUser1, UserResponseModel.class))
+                .collect(Collectors.toList());
     }
 }
