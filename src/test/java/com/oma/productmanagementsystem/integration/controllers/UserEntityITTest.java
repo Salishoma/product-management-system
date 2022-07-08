@@ -1,7 +1,7 @@
 package com.oma.productmanagementsystem.integration.controllers;
 
 import com.oma.productmanagementsystem.dtos.UserResponseModel;
-import com.oma.productmanagementsystem.entities.ProductUser;
+import com.oma.productmanagementsystem.entities.UserEntity;
 import com.oma.productmanagementsystem.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ProductUserITTest {
+public class UserEntityITTest {
 
     @Autowired
     private WebApplicationContext context;
@@ -47,29 +47,29 @@ public class ProductUserITTest {
     @MockBean
     private UserService userService;
 
-    ProductUser productUser;
+    UserEntity userEntity;
 
-    List<ProductUser> list;
+    ArrayList<UserEntity> list;
 
     @BeforeEach
     public void setUp() {
 
         list = spy(ArrayList.class);
-        productUser = new ProductUser();
+        userEntity = new UserEntity();
 
-        productUser.setPassword("abc");
-        productUser.setUserId("3");
-        productUser.setFirstName("oma");
-        productUser.setLastName("shadu");
-        productUser.setEmail("oma@shadu.com");
+        userEntity.setEncryptedPassword("abc");
+        userEntity.setUserId("3");
+        userEntity.setFirstName("oma");
+        userEntity.setLastName("shadu");
+        userEntity.setEmail("oma@shadu.com");
 
-        ProductUser user2 = new ProductUser();
+        UserEntity user2 = new UserEntity();
         user2.setUserId("2");
         user2.setEmail("oma2@email.com");
         user2.setFirstName("Oma2");
         user2.setLastName("Salifu2");
-        user2.setPassword("password2");
-        list.add(productUser);
+        user2.setEncryptedPassword("password2");
+        list.add(userEntity);
         list.add(user2);
 
         mockMvc = MockMvcBuilders
@@ -109,18 +109,18 @@ public class ProductUserITTest {
     }
 
     private UserResponseModel getUserResponseModel() {
-        System.out.println("Id is: " + productUser.getUserId());
+        System.out.println("Id is: " + userEntity.getUserId());
         return UserResponseModel.builder()
-                .userId(productUser.getUserId())
-                .email(productUser.getEmail())
-                .firstName(productUser.getFirstName())
-                .lastName(productUser.getLastName())
+                .userId(userEntity.getUserId())
+                .email(userEntity.getEmail())
+                .firstName(userEntity.getFirstName())
+                .lastName(userEntity.getLastName())
                 .build();
     }
 
     private List<UserResponseModel> findUsers() {
-        return list.stream().map(productUser1 ->
-                new ModelMapper().map(productUser1, UserResponseModel.class))
+        return list.stream().map(userEntity1 ->
+                new ModelMapper().map(userEntity1, UserResponseModel.class))
                 .collect(Collectors.toList());
     }
 }

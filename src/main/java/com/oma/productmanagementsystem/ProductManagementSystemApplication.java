@@ -1,15 +1,13 @@
 package com.oma.productmanagementsystem;
 
 import com.oma.productmanagementsystem.entities.Product;
-import com.oma.productmanagementsystem.entities.ProductUser;
+import com.oma.productmanagementsystem.entities.UserEntity;
 import com.oma.productmanagementsystem.repositories.ProductRepository;
 import com.oma.productmanagementsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.util.UUID;
 
 @SpringBootApplication
 public class ProductManagementSystemApplication implements CommandLineRunner {
@@ -25,21 +23,21 @@ public class ProductManagementSystemApplication implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        ProductUser user = new ProductUser();
+    public void run(String... args) {
+        UserEntity user = new UserEntity();
         user.setUserId("1");
         user.setEmail("oma@email.com");
         user.setFirstName("Oma");
         user.setLastName("Salifu");
-        user.setPassword("password");
+        user.setEncryptedPassword("password");
         userRepository.save(user);
 
-        ProductUser user2 = new ProductUser();
+        UserEntity user2 = new UserEntity();
         user2.setUserId("2");
         user2.setEmail("oma2@email.com");
         user2.setFirstName("Oma2");
         user2.setLastName("Salifu2");
-        user2.setPassword("password2");
+        user2.setEncryptedPassword("password2");
         userRepository.save(user2);
 
         Product product = new Product();
