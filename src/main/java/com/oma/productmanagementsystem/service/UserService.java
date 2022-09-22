@@ -11,7 +11,7 @@ public interface UserService extends UserDetailsService {
     UserResponseModel createUser(UserRequestModel userRequestModel);
     UserResponseModel getUser(String userId);
     UserResponseModel updateUser(String userId, UserRequestModel userRequestModel);
-    UserRequestModel deleteUser(String userId);
+    String deleteUser(String userId);
     List<UserResponseModel> getUsers();
     UserEntity findByEmail(String email);
 

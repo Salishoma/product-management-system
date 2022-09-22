@@ -12,19 +12,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -39,13 +39,14 @@ public class UserController {
     }
 
     @RequestMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('profile:write')")
     public ResponseEntity<List<UserResponseModel>> getUsers() {
         List<UserResponseModel> users = userService.getUsers();
-        System.out.println("=========>Users: " + users);
         return ResponseEntity.ok(users);
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('profile:write') or principal == @emailSearch.getEmailFromId(#userId)")
     public ResponseEntity<UserResponseModel> getUser(@PathVariable String userId) {
         System.out.println("user id is: " + userId);
 
@@ -63,6 +64,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.PUT)
+    @PreAuthorize("hasAuthority('profile:write') or principal == @emailSearch.getEmailFromId(#userId)")
     public ResponseEntity<UserResponseModel> updateUser(@PathVariable final String userId, UserRequestModel userRequestModel) {
         UserResponseModel user = userService.updateUser(userId, userRequestModel);
         return user == null ?
@@ -70,16 +72,18 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
-    public ResponseEntity.HeadersBuilder<?> deleteUser(@PathVariable final String userId) {
-        userService.deleteUser(userId);
-        return ResponseEntity.noContent();
+    @PreAuthorize("hasAuthority('profile:delete') or principal == @emailSearch.getEmailFromId(#userId)")
+    public ResponseEntity<String> deleteUser(@PathVariable final String userId) {
+        ;
+        return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/authenticate", method = RequestMethod.POST)
     public ResponseEntity<?> createAuthenticationToken(@RequestBody UserLogin authenticationRequest) {
         try {
-            Authentication authentication = authenticate(authenticationRequest.getEmail(),
-                    authenticationRequest.getPassword());
+            String email = authenticationRequest.getEmail();
+            String password = authenticationRequest.getPassword();
+            Authentication authentication = authenticate(email, password);
 
             final UserDetails userDetails =
                     userService.loadUserByUsername(authenticationRequest.getEmail());

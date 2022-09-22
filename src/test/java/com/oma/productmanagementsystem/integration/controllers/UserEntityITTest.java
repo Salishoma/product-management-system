@@ -1,5 +1,7 @@
 package com.oma.productmanagementsystem.integration.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oma.productmanagementsystem.dtos.UserRequestModel;
 import com.oma.productmanagementsystem.dtos.UserResponseModel;
 import com.oma.productmanagementsystem.entities.UserEntity;
 import com.oma.productmanagementsystem.service.UserService;
@@ -7,20 +9,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -31,23 +31,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
+@WithMockUser(value="abc", authorities = {"profile:write"})
 public class UserEntityITTest {
 
     @Autowired
     private WebApplicationContext context;
 
-    @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private UserService userService;
 
     UserEntity userEntity;
+
+    UserEntity user2;
 
     ArrayList<UserEntity> list;
 
@@ -63,7 +66,7 @@ public class UserEntityITTest {
         userEntity.setLastName("shadu");
         userEntity.setEmail("oma@shadu.com");
 
-        UserEntity user2 = new UserEntity();
+        user2 = new UserEntity();
         user2.setUserId("2");
         user2.setEmail("oma2@email.com");
         user2.setFirstName("Oma2");
@@ -83,10 +86,10 @@ public class UserEntityITTest {
     public void findUser() throws Exception {
         when(userService.getUser(any(String.class)))
                 .thenReturn(getUserResponseModel());
-        mockMvc.perform(get("/api/users/3").with(user("user")))
+        mockMvc.perform(get("/users/{id}",3))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId", is("3")))
+                .andExpect(jsonPath("$.userId").value("3"))
                 .andExpect(jsonPath("$.firstName", is("oma")))
                 .andExpect(jsonPath("$.lastName", is("shadu")))
                 .andExpect(jsonPath("$.email", is("oma@shadu.com")));
@@ -99,7 +102,7 @@ public class UserEntityITTest {
 
         when(userService.getUsers())
                 .thenReturn(users);
-        mockMvc.perform(get("/api/users/").with((user("user"))))
+        mockMvc.perform(get("/users"))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()", is(2)))
@@ -108,14 +111,84 @@ public class UserEntityITTest {
                 .andExpect(jsonPath("$[1].email", is("oma2@email.com")));
     }
 
+    @Test
+    public void createUser() throws Exception {
+
+        UserRequestModel model = requestModel("4");
+        UserResponseModel responseModel = createdUser(model);
+        when(userService.createUser((any(UserRequestModel.class))))
+                .thenReturn(responseModel);
+
+        mockMvc.perform(post("/users").contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(new ObjectMapper().writeValueAsBytes(responseModel)))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.firstName", is("Oma4")))
+                .andExpect(jsonPath("$.lastName", is("Salifu4")))
+                .andExpect(jsonPath("$.email", is("oma4@email")));
+    }
+
+    @Test
+    public void updateUser() throws Exception {
+
+        UserRequestModel model = requestModel("2");
+        UserResponseModel responseModel = updatedUser(user2.getUserId(), model);
+        when(userService.updateUser(any(String.class), any(UserRequestModel.class)))
+                .thenReturn(responseModel);
+
+        mockMvc.perform(put("/users/{id}", 2))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName", is("Oma2")))
+                .andExpect(jsonPath("$.lastName", is("Salifu2")))
+                .andExpect(jsonPath("$.email", is("oma2@email")));
+    }
+
+    @Test
+    @WithMockUser(value="abc", authorities = {"profile:delete"})
+    public void removeUser() throws Exception {
+
+        doNothing().when(userService).deleteUser(any(String.class));
+
+        mockMvc.perform(delete("/users/{id}", "2"))
+                .andExpect(status().isNoContent());
+    }
+
     private UserResponseModel getUserResponseModel() {
-        System.out.println("Id is: " + userEntity.getUserId());
         return UserResponseModel.builder()
                 .userId(userEntity.getUserId())
                 .email(userEntity.getEmail())
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
                 .build();
+    }
+
+    private UserResponseModel createdUser(UserRequestModel requestModel) {
+        return new ModelMapper().map(requestModel, UserResponseModel.class);
+    }
+
+    private UserRequestModel requestModel(String num) {
+        UserRequestModel model = new UserRequestModel();
+        model.setFirstName("Oma" + num);
+        model.setLastName("Salifu" + num);
+        model.setEmail("oma" + num + "@email");
+        model.setPassword("newPassword" + num);
+        return model;
+    }
+
+    private UserResponseModel updatedUser(String userId, UserRequestModel model) {
+        int ind = 0;
+        UserEntity user;
+        for (int i = 0; i < list.size(); i++) {
+            if (userId.equals(user2.getUserId())) {
+                ind = i;
+                break;
+            }
+        }
+        ModelMapper mapper = new ModelMapper();
+        user = mapper.map(model, UserEntity.class);
+        list.set(ind, user);
+        return mapper.map(model, UserResponseModel.class);
     }
 
     private List<UserResponseModel> findUsers() {
