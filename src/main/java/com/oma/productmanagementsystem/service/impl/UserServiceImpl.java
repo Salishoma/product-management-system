@@ -41,6 +41,7 @@ public class UserServiceImpl implements UserService {
         user.setEncryptedPassword(passwordEncoder.encode(userRequestModel.getPassword()));
         String userId = UUID.randomUUID().toString();
         user.setUserId(userId);
+        user.setUserRole(USER);
         userRepository.save(user);
 
         return mapper.map(user, UserResponseModel.class);
@@ -59,12 +60,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseModel updateUser(String userId, UserRequestModel userRequestModel) {
-        return null;
+        UserEntity userEntity = userRepository.findById(userId).orElse(null);
+        if (userEntity == null) {
+            return null;
+        }
+        ModelMapper mapper = new ModelMapper();
+        userEntity = mapper.map(userRequestModel, UserEntity.class);
+        userRepository.save(userEntity);
+        return mapper.map(userRequestModel, UserResponseModel.class);
     }
 
     @Override
-    public UserRequestModel deleteUser(String userId) {
-        return null;
+    public String deleteUser(String userId) {
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
+            return "User deleted successfully";
+        }
+        return "User with id " + userId + " does not exist";
     }
 
     @Override
@@ -83,12 +95,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findByEmail(username);
-        if(userEntity != null) {
-            Collection<? extends GrantedAuthority> authorities = userEntity.getUserRole().equals(ADMIN) ?
-                    ADMIN.getGrantedAuthorities() : USER.getGrantedAuthorities();
-
-            return new SecurityUser(userEntity, authorities);
+        if(userEntity == null) {
+            return null;
         }
-        return null;
+        Collection<? extends GrantedAuthority> authorities = userEntity.getUserRole().equals(ADMIN) ?
+                ADMIN.getGrantedAuthorities() : USER.getGrantedAuthorities();
+
+        return new SecurityUser(userEntity, authorities);
     }
 }

@@ -3,9 +3,7 @@ package com.oma.productmanagementsystem.entities;
 import com.oma.productmanagementsystem.enums.ApplicationUserRole;
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
@@ -23,6 +21,8 @@ public class UserEntity implements Serializable {
 
     private String encryptedPassword;
     private String email;
+
+    @Enumerated(EnumType.STRING)
     private ApplicationUserRole userRole;
 
 }

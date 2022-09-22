@@ -16,6 +16,7 @@ public class SwaggerApi {
     public GroupedOpenApi api() {
         return GroupedOpenApi.builder()
                 .pathsToMatch("**")
+                .group("salishoma")
                 .build();
     }
 

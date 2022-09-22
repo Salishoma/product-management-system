@@ -46,7 +46,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .cors()
                 .and()
                 .authorizeRequests()
-                .antMatchers("/v2/api-docs/**", "/swagger.json", "/swagger-ui/**", "/swagger-ui.html",
+                .antMatchers("/api/", "/api/home", "/v2/api-docs/**", "/swagger.json", "/swagger-ui/**", "/swagger-ui.html",
                         "/swagger-resources/**", "/webjars/**").permitAll()
                 .antMatchers(HttpMethod.POST,
                         environment.getProperty("login.url.path"), "/api/users/", "/api/users/authenticate").permitAll()

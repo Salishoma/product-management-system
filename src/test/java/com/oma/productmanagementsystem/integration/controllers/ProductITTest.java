@@ -1,5 +1,7 @@
 package com.oma.productmanagementsystem.integration.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oma.productmanagementsystem.dtos.ProductRequestModel;
 import com.oma.productmanagementsystem.dtos.ProductResponseModel;
 import com.oma.productmanagementsystem.entities.Product;
 import com.oma.productmanagementsystem.service.ProductService;
@@ -11,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -27,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ActiveProfiles("test")
@@ -41,7 +45,6 @@ public class ProductITTest {
 
     List<Product> list;
 
-    @Autowired
     private MockMvc mockMvc;
 
     @MockBean
@@ -79,7 +82,7 @@ public class ProductITTest {
     public void findProduct() throws Exception {
         when(productService.getProduct(any(String.class)))
                 .thenReturn(getProductResponseModel());
-        mockMvc.perform(get("/api/products/3").with(user("user")))
+        mockMvc.perform(get("/products/{id}", 3).with(user("user")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.productId", is("3")))
@@ -95,13 +98,46 @@ public class ProductITTest {
         List<ProductResponseModel> products = findProducts();
         when(productService.getProducts())
                 .thenReturn(products);
-        mockMvc.perform(get("/api/products").with((user("user"))))
+        mockMvc.perform(get("/products").with((user("user"))))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()", is(2)))
                 .andExpect(jsonPath("$[1].productId", is("4")))
                 .andExpect(jsonPath("$[0].brand", is("Infinix")))
                 .andExpect(jsonPath("$[1].description", is("It looks good")));
+    }
+
+    @Test
+    @WithMockUser(value="abc", authorities = {"profile:write"})
+    public void createProduct() throws Exception {
+        ProductRequestModel requestModel = createNewProduct();
+        ProductResponseModel responseModel = sendProductResponse(requestModel);
+        ObjectMapper mapper = new ObjectMapper();
+        when(productService.createProduct(any(ProductRequestModel.class)))
+                .thenReturn(responseModel);
+        mockMvc.perform(post("/products")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(mapper.writeValueAsString(requestModel)))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productName").value("five"))
+                .andExpect(jsonPath("$.brand").value("pro5"))
+                .andExpect(jsonPath("$.image", is("asd")))
+                .andExpect(jsonPath("$.description", is("fifth product")));
+    }
+
+    private ProductRequestModel createNewProduct() {
+        Product product = new Product();
+        product.setProductId("5");
+        product.setProductName("five");
+        product.setDescription("fifth product");
+        product.setImage("asd");
+        product.setBrand("pro5");
+        product.setPrice(20.3);
+        return new ModelMapper().map(product, ProductRequestModel.class);
+    }
+    private ProductResponseModel sendProductResponse(ProductRequestModel model) {
+        return new ModelMapper().map(model, ProductResponseModel.class);
     }
 
     private List<ProductResponseModel> findProducts() {
@@ -111,7 +147,6 @@ public class ProductITTest {
     }
 
     private ProductResponseModel getProductResponseModel() {
-        System.out.println("Id is: " + product.getProductId());
         return ProductResponseModel.builder()
                 .productId(product.getProductId())
                 .productName(product.getProductName())
